@@ -23,23 +23,40 @@ module TreeSplit {A : Set} where
     base : Interleave even [] [] []
     step : ∀ {x xs ys zs e} → Interleave (other e) xs ys zs → Interleave e (x ∷ ys) xs (x ∷ zs)
 
-  data Split : ℕ → List A → Set where
-    empty : Split zero []
-    single : ∀ x → Split zero (x ∷ []) 
-    branch : ∀ x y {xs ys zs n} e
-      → Interleave e (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
-      → Split n (x ∷ xs)
-      → Split n (y ∷ ys)
-      → Split (suc n) (x ∷ y ∷ zs)
+  mutual
+    data Split : List A → Set where
+      empty : Split []
+      single : ∀ x → Split (x ∷ []) 
+      branch : ∀ x y {xs ys zs} e
+        → Interleave e (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
+        → (l : Split (x ∷ xs))
+        → (r : Split (y ∷ ys))
+        → (eq : depth l ≡ depth r)
+        → Split (x ∷ y ∷ zs)
 
-  insert : ∀ {xs} → (x : A) → Split xs → Split (x ∷ xs)
-  insert z empty = single z
-  insert z (single x) = branch z x even (step (step base)) (single z) (single x)
-  insert z (branch x y even il sx sy) = 
-    branch z x uneven (step il) (insert z sy) sx
+    depth : ∀ {xs} → Split xs → ℕ
+    depth empty  = zero
+    depth (single _) = zero
+    depth (branch _ _ _ _ p q _) = suc (depth p)
+
+  insert : ∀ {zs} → (z : A) → Split zs → Split (z ∷ zs)
+  insert z empty
+    = single z
+  insert z (single x)
+    = branch z x even (step (step base)) (single z) (single x) refl
+  insert z (branch x y even il sx sy eq)
+    = branch z x uneven (step il) (insert z sy) sx {!!}
+  insert z (branch x y uneven il sx sy eq)
+    = branch z x even (step il) (insert z sy) sx {!!} 
+
+{-
+  insert : ∀ {xs n} → (x : A) → Split n xs → ∃ λ n' → Split n' (x ∷ xs)
+  insert z (single x) = 1 , branch z x even (step (step base)) (single z) (single x)
+  insert {n = suc n} z (branch x y even il sx sy) = 
+    suc n , branch z x uneven (step il) (insert z sy) sx
   insert z (branch x y uneven il sx sy) = 
-    branch z x   even (step il) (insert z sy) sx
-
+    _ , branch z x   even (step il) (insert z sy) sx
+-}
 {-
   split : (xs : List A) → Split xs
   split []       = empty
