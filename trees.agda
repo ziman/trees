@@ -10,6 +10,85 @@ open import Data.Maybe
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality as PEq
 
+cong₃ : ∀ {A B C D : Set} (f : A → B → C → D) {x y z x' y' z'} → x ≡ x' → y ≡ y' → z ≡ z' → f x y z ≡ f x' y' z'
+cong₃ f refl refl refl = refl
+
+module Logarithm where
+
+  {-
+  data Balance : Set where
+    even uneven : Balance
+
+  other : Balance → Balance
+  other even = uneven
+  other uneven = even
+
+  data Balanced : Balance → (x y z : ℕ) → Set where
+    base : Balanced even zero zero zero
+    step : ∀ {x y z b} → Balanced (other b) x y z → Balanced b (suc y) x (suc z)
+
+  bal-eq-weak : ∀ {x y x' y' z e} → Balanced e x y z → Balanced e x' y' z → x ≡ x' × y ≡ y'
+  bal-eq-weak base base = refl , refl
+  bal-eq-weak (step b) (step b') with bal-eq-weak b b'
+  ... | eqx , eqy = cong suc eqy , eqx
+
+  bal-even : ∀ {x y z} → Balanced even x y z → x ≡ y
+  bal-even base = refl
+  bal-even (step (step b)) = cong suc (bal-even b)
+
+  bal-uneven : ∀ {x y z} → Balanced uneven x y z → x ≡ suc y
+  bal-uneven (step base) = refl
+  bal-uneven (step (step b)) = cong suc (bal-uneven b)
+
+  bal-eq-balance : ∀ {x y x' y' z e e'} → Balanced e x y z → Balanced e' x' y' z → e ≡ e'
+  bal-eq-balance {e = even}   {e' = even}    base     base     = refl
+  bal-eq-balance {e = even}   {e' = even}   (step b) (step b') = refl
+  bal-eq-balance {e = even}   {e' = uneven}  base    ()
+  bal-eq-balance {e = even}   {e' = uneven} (step b) (step b') = bal-eq-balance b' b
+  bal-eq-balance {e = uneven} {e' = even}   (step b) (step b') = bal-eq-balance b' b
+  bal-eq-balance {e = uneven} {e' = uneven} (step b) (step b') = refl
+
+  bal-eq : ∀ {x y x' y' z e e'} → Balanced e x y z → Balanced e' x' y' z → e ≡ e' × x ≡ x' × y ≡ y'
+  bal-eq b b' with bal-eq-balance b b'
+  bal-eq b b' | refl = refl , bal-eq-weak b b'
+
+  bal-irr : ∀ {x y z e} → (b b' : Balanced e x y z) → b ≡ b'
+  bal-irr base base = refl
+  bal-irr (step b) (step b') = cong step (bal-irr b b')
+  -}
+
+  data LogTree : ℕ → Set where
+    single : LogTree (suc zero)
+    double : ∀ {x y z {- b -} }
+      {- → Balanced b (suc x) (suc y) (suc (suc z)) -}
+      → LogTree (suc x)
+      → LogTree (suc y)
+      → LogTree (suc (suc z))
+
+  depth : ∀ {n} → LogTree n → ℕ
+  depth single = 0
+  depth (double {- b -} l r) = suc (depth r)
+
+  {-
+  logtree-irr : ∀ {n} → (p q : LogTree n) → p ≡ q
+  logtree-irr single single = refl
+  logtree-irr (double {b = b} b₁ lx₁ ly₁) (double b₂ lx₂ ly₂) with bal-eq b₁ b₂
+  ... | refl , refl , refl = cong₃ double (bal-irr b₁ b₂) (logtree-irr lx₁ lx₂) (logtree-irr ly₁ ly₂)
+  -}
+
+  inc : ∀ {n} → LogTree n → LogTree (suc n)
+  inc single = double {- (step (step base)) -} single single
+  inc (double {- b =   even bal -} lx ly) = double {- (step bal) -} (inc ly) lx
+  {- inc (double {b = uneven bal} lx ly) = double (step bal) (inc ly) lx -}
+
+  logtree : (n : ℕ) → LogTree (suc n)
+  logtree  zero   = single
+  logtree (suc n) = inc (logtree n)
+
+  log : (n : ℕ) → n ≢ 0 → ℕ
+  log zero    0≢0 = ⊥-elim (0≢0 refl)
+  log (suc n) n≢0 = depth (logtree n)
+
 module TreeSplit {A : Set} where
 
   data Evenness : Set where
@@ -23,31 +102,171 @@ module TreeSplit {A : Set} where
     base : Interleave even [] [] []
     step : ∀ {x xs ys zs e} → Interleave (other e) xs ys zs → Interleave e (x ∷ ys) xs (x ∷ zs)
 
-  mutual
-    data Split : List A → Set where
-      empty : Split []
-      single : ∀ x → Split (x ∷ []) 
-      branch : ∀ x y {xs ys zs} e
-        → Interleave e (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
-        → (l : Split (x ∷ xs))
-        → (r : Split (y ∷ ys))
-        → (eq : depth l ≡ depth r)
-        → Split (x ∷ y ∷ zs)
+  il-irr : ∀ {xs ys zs e} → (p q : Interleave e xs ys zs) → p ≡ q
+  il-irr base base = refl
+  il-irr (step p) (step q) = cong step (il-irr p q)
 
-    depth : ∀ {xs} → Split xs → ℕ
-    depth empty  = zero
-    depth (single _) = zero
-    depth (branch _ _ _ _ p q _) = suc (depth p)
+  il-eq-evenness : ∀ {xs ys xs' ys' zs e e'} → Interleave e xs ys zs → Interleave e' xs' ys' zs → e ≡ e'
+  il-eq-evenness {e = even}   {e' = even}    base      base      = refl
+  il-eq-evenness {e = even}   {e' = even}   (step il) (step il') = refl
+  il-eq-evenness {e = even}   {e' = uneven}  base     ()
+  il-eq-evenness {e = even}   {e' = uneven} (step il) (step il') = il-eq-evenness il' il
+  il-eq-evenness {e = uneven} {e' = even}   (step il) (step il') = il-eq-evenness il' il
+  il-eq-evenness {e = uneven} {e' = uneven} (step il) (step il') = refl
 
-  insert : ∀ {zs} → (z : A) → Split zs → Split (z ∷ zs)
-  insert z empty
-    = single z
-  insert z (single x)
-    = branch z x even (step (step base)) (single z) (single x) refl
-  insert z (branch x y even il sx sy eq)
-    = branch z x uneven (step il) (insert z sy) sx {!!}
-  insert z (branch x y uneven il sx sy eq)
-    = branch z x even (step il) (insert z sy) sx {!!} 
+  il-eq-weak : ∀ {xs ys xs' ys' zs e} → Interleave e xs ys zs → Interleave e xs' ys' zs → xs ≡ xs' × ys ≡ ys'
+  il-eq-weak base base = refl , refl
+  il-eq-weak (step il) (step il') with il-eq-weak il il'
+  ... | refl , refl = refl , refl
+
+  il-eq : ∀ {xs ys xs' ys' zs e e'} → Interleave e xs ys zs → Interleave e' xs' ys' zs → e ≡ e' × xs ≡ xs' × ys ≡ ys'
+  il-eq il il' with il-eq-evenness il il'
+  ... | refl = refl , il-eq-weak il il'
+
+  data Split : List A → Set where
+    single : ∀ x → Split (x ∷ []) 
+    branch : ∀ x y {xs ys zs} e
+      → Interleave e (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
+      → (l : Split (x ∷ xs))
+      → (r : Split (y ∷ ys))
+      → Split (x ∷ y ∷ zs)
+
+  depth : ∀ {xs} → Split xs → ℕ
+  depth (single _) = 0
+  depth (branch _ _ _ _ l r) = suc (depth r)
+  
+  split-irr : ∀ {xs} → (p q : Split xs) → p ≡ q
+  split-irr (single x) (single .x) = refl
+  split-irr (branch x y e il l r) (branch .x .y e' il' l' r') with il-eq il il'
+  ... | e=e' , refl , refl rewrite e=e' = cong₃ (branch x y e') (il-irr il il') (split-irr l l') (split-irr r r')
+
+  insert : ∀ z {zs} → Split zs → Split (z ∷ zs)
+  insert z (single x) = branch z x even (step (step base)) (single z) (single x)
+  insert z (branch x y   even il l r) = branch z x uneven (step il) (insert z r) l
+  insert z (branch x y uneven il l r) = branch z x   even (step il) (insert z r) l
+
+  split : ∀ x xs → Split (x ∷ xs)
+  split x []       = single x
+  split x (y ∷ xs) = insert x (split y xs)
+
+  data Exp : ℕ → List A → Set where
+    single : ∀ x → Exp zero (x ∷ [])
+    branch : ∀ {xs ys zs n}
+      → Interleave even xs ys zs
+      → Exp n xs
+      → Exp n ys
+      → Exp (suc n) zs
+  
+  exp? : ∀ {xs} → (s : Split xs) → Maybe (Exp (depth s) xs)
+  exp? (single x) = just (single x)
+  exp? (branch x y uneven il l r) = nothing
+  exp? (branch x y even il l r) with exp? l | exp? r
+  ... | nothing | nothing = nothing
+  ... | just el | nothing = nothing
+  ... | nothing | just er = nothing
+  ... | just el | just er = just (branch il {!!} er)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 {-
   insert : ∀ {xs n} → (x : A) → Split n xs → ∃ λ n' → Split n' (x ∷ xs)
