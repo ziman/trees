@@ -123,6 +123,10 @@ module TreeSplit {A : Set} where
   il-eq il il' with il-eq-evenness il il'
   ... | refl = refl , il-eq-weak il il'
 
+  il-length : ∀ {xs ys zs} → Interleave even xs ys zs → length xs ≡ length ys
+  il-length base = refl
+  il-length (step (step il)) = cong suc (il-length il)
+
   data Split : List A → Set where
     single : ∀ x → Split (x ∷ []) 
     branch : ∀ x y {xs ys zs} e
@@ -135,14 +139,19 @@ module TreeSplit {A : Set} where
   depth (single _) = 0
   depth (branch _ _ _ _ l r) = suc (depth r)
 
-  il-length : ∀ {xs ys zs} → Interleave even xs ys zs → length xs ≡ length ys
-  il-length base = refl
-  il-length (step (step il)) = cong suc (il-length il)
-
   il-depth : ∀ {xs ys zs} → Interleave even xs ys zs → (sx : Split xs) → (sy : Split xs) → depth sx ≡ depth sy
   il-depth base () ()
   il-depth (step i) (single x) (single .x) = refl
   il-depth (step i) (branch x y e il l r) (branch .x .y e' il' l' r') = cong suc {!!}
+
+  length-depth : ∀ {xs ys} → (sx : Split xs) → (sy : Split ys) → length xs ≡ length ys → depth sx ≡ depth sy
+  length-depth (single x) (single x') eq = refl
+  length-depth (branch x y even il sx sy) (branch x' y' even il' sx' sy') eq = {!!}
+  length-depth (branch x y even il sx sy) (branch x' y' uneven il' sx' sy') eq = {!!}
+  length-depth (branch x y uneven il sx sy) (branch x' y' even il' sx' sy') eq = {!!}
+  length-depth (branch x y uneven il sx sy) (branch x' y' uneven il' sx' sy') eq = {!!}
+  length-depth (single x) (branch x₁ y e x₂ sy sy₁) ()
+  length-depth (branch x y e x₁ sx sx₁) (single x₂) ()
   
   split-irr : ∀ {xs} → (p q : Split xs) → p ≡ q
   split-irr (single x) (single .x) = refl
