@@ -134,6 +134,15 @@ module TreeSplit {A : Set} where
   depth : ∀ {xs} → Split xs → ℕ
   depth (single _) = 0
   depth (branch _ _ _ _ l r) = suc (depth r)
+
+  il-length : ∀ {xs ys zs} → Interleave even xs ys zs → length xs ≡ length ys
+  il-length base = refl
+  il-length (step (step il)) = cong suc (il-length il)
+
+  il-depth : ∀ {xs ys zs} → Interleave even xs ys zs → (sx : Split xs) → (sy : Split xs) → depth sx ≡ depth sy
+  il-depth base () ()
+  il-depth (step i) (single x) (single .x) = refl
+  il-depth (step i) (branch x y e il l r) (branch .x .y e' il' l' r') = cong suc {!!}
   
   split-irr : ∀ {xs} → (p q : Split xs) → p ≡ q
   split-irr (single x) (single .x) = refl
