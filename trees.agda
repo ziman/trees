@@ -1,6 +1,7 @@
 module trees where
 
 open import Function
+open import Algebra.Structures
 open import Data.Empty
 open import Data.Nat
 open import Data.Nat.Properties
@@ -89,6 +90,7 @@ module Logarithm where
   log zero    0≢0 = ⊥-elim (0≢0 refl)
   log (suc n) n≢0 = depth (logtree n)
 
+{-
 module TreeSplit {A : Set} where
 
   data Evenness : Set where
@@ -183,6 +185,58 @@ module TreeSplit {A : Set} where
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
   ... | just el | just er = just (branch il {!!} er)
+-}
+
+module VecSplit (A : Set) where
+
+  open import Data.Vec
+
+  data Evenness : Set where
+    even uneven : Evenness
+
+  other : Evenness → Evenness
+  other   even = uneven
+  other uneven =   even
+
+  +-comm : ∀ p q → p + q ≡ q + p
+  +-comm = comm
+    where
+      open IsCommutativeSemiring isCommutativeSemiring
+      open IsCommutativeMonoid +-isCommutativeMonoid
+
+  +-suc : ∀ p q → suc (suc (p + q)) ≡ suc p + suc q
+  +-suc zero q = refl
+  +-suc (suc p) q = cong suc (+-suc p q)
+
+  +-suc' : ∀ p q → p + suc q ≡ suc (p + q)
+  +-suc' zero q = refl
+  +-suc' (suc p) q = cong suc (+-suc' p q)
+
+  data Interleave : Evenness → {n n' : ℕ} → Vec A n → Vec A n' → Vec A (n + n') → Set where
+    base : Interleave even [] [] []
+    step-e : ∀ {n x xs ys zs}
+      → Interleave uneven {suc n} {n} ys xs (subst (Vec A) (+-suc' n n) zs)
+      → Interleave even {suc n} {suc n} (x ∷ xs) ys (x ∷ zs)
+    step-u : ∀ {n x xs ys zs}
+      → Interleave even {n} {n} ys xs zs
+      → Interleave uneven {suc n} {n} (x ∷ xs) ys (x ∷ zs)
+
+{-
+  data Split : {n : ℕ} → Vec A n → Set where
+    single : ∀ x → Split (x ∷ [])
+    branch-e : ∀ {n x y} {xs : Vec A n} {ys : Vec A n} {zs : Vec A (n + n)}
+      → Interleave even
+-}
+{-
+  data Split : {n : ℕ} (xs : Vec A n) → Set where
+    single : ∀ x → Split (x ∷ [])
+    branch : ∀ {x y xn yn} {xs : Vec A xn} {ys : Vec A yn} {zs : Vec A (xn + yn)}
+      → (e : Evenness)
+      → Interleave e (x ∷ xs) (y ∷ ys) (subst (Vec A) (+-suc xn yn) (x ∷ y ∷ zs))
+      → Split (x ∷ xs)
+      → Split (y ∷ ys)
+      → Split (x ∷ y ∷ zs)
+-}
 
 
 
