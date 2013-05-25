@@ -55,61 +55,48 @@ module VecSplit (A : Set) where
   other   even = uneven
   other uneven =   even
 
-  +-comm : ∀ p q → p + q ≡ q + p
-  +-comm = comm
-    where
-      open IsCommutativeSemiring isCommutativeSemiring
-      open IsCommutativeMonoid +-isCommutativeMonoid
-
-  +-suc : ∀ p q → suc (suc (p + q)) ≡ suc p + suc q
-  +-suc zero q = refl
-  +-suc (suc p) q = cong suc (+-suc p q)
-
-  +-suc' : ∀ p q → p + suc q ≡ suc (p + q)
-  +-suc' zero q = refl
-  +-suc' (suc p) q = cong suc (+-suc' p q)
-
   data Plus : ℕ → ℕ → ℕ → Set where
     +-base : ∀ {n} → Plus 0 n n
     +-step : ∀ {m n o} → Plus m n o → Plus (suc m) n (suc o)
 
-  +-rsuc : ∀ {m n o} → Plus m (suc n) o → Plus (suc m) n o
-  +-rsuc +-base = +-step +-base
-  +-rsuc (+-step pl) = +-step (+-rsuc pl)
-
-  +-rev : ∀ {m n o} → Plus m (suc n) (suc o) → Plus m n o
-  +-rev +-base = +-base
-  +-rev (+-step pl) = +-rsuc pl 
+  +-suc : ∀ {p q r} → Plus p q r → Plus (suc p) (suc q) (suc (suc r))
+  +-suc  +-base     = +-step +-base
+  +-suc (+-step pl) = +-step (+-suc pl)
 
   data Interleave : Evenness → {m n o : ℕ}
-    → Plus m n o
     → Vec A m → Vec A n → Vec A o
     → Set
    where
-    base : Interleave even +-base [] [] []
-    step-e : ∀ {n x y pl} {xs ys : Vec A n} {zs : Vec A (n + n)}
-      → Interleave uneven {suc n} {n} (+-rev pl) (y ∷ ys) xs (y ∷ zs)
-      → Interleave even {suc n} {suc n} pl (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
-    step-u : ∀ {n x pl} {xs ys : Vec A n} {zs : Vec A (n + n)}
-      → Interleave even {n} {n} pl ys xs zs
-      → Interleave uneven {suc n} {n} (+-step pl) (x ∷ xs) ys (x ∷ zs)
+    base : Interleave even [] [] []
 
-{-
+    step-e : ∀ {n nn x y} {xs ys : Vec A n} {zs : Vec A nn}
+      → Plus n n nn
+      → Interleave uneven {    n} {suc n}      xs  (y ∷ ys) (    y ∷ zs)
+      → Interleave even   {suc n} {suc n} (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
+
+    step-u : ∀ {n nn y} {xs ys : Vec A n} {zs : Vec A nn}
+      → Plus n n nn
+      → Interleave even   {n} {    n} xs      ys       zs
+      → Interleave uneven {n} {suc n} xs (y ∷ ys) (y ∷ zs)
+
   data Split : {n : ℕ} → Vec A n → Set where
     single : ∀ x → Split (x ∷ [])
-    branch-e : ∀ {n x y} {xs : Vec A n} {ys : Vec A n} {zs : Vec A (n + n)}
-      → Interleave even (x ∷ xs) (y ∷ ys) (subst (Vec A) (+-suc n n) (x ∷ y ∷ zs))
+
+    branch-e : ∀ {n nn x y} {xs ys : Vec A n} {zs : Vec A nn}
+      → Plus n n nn
+      → Interleave even (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
       → Split (x ∷ xs)
       → Split (y ∷ ys)
       → Split (x ∷ y ∷ zs)
-    branch-u : ∀ {n x y} {xs : Vec A (suc n)} {ys : Vec A n} {zs : Vec A (suc n + n)}
-      → Interleave uneven (x ∷ xs) (y ∷ ys) (subst (Vec A) (cong suc (+-suc n n)) (x ∷ y ∷ zs))
+
+    branch-u : ∀ {n nn x y y'} {xs ys : Vec A n} {zs : Vec A nn}
+      → Plus n n nn
+      → Interleave uneven (x ∷ xs) (y ∷ y' ∷ ys) (y ∷ x ∷ y' ∷ zs)
       → Split (x ∷ xs)
-      → Split (y ∷ ys)
-      → Split (x ∷ y ∷ zs)
-  
+      → Split (y ∷ y' ∷ ys)
+      → Split (y ∷ x ∷ y' ∷ zs)
+
   insert : {n : ℕ} → {xs : Vec A n} → (z : A) → Split xs → Split (z ∷ xs)
-  insert z (single x) = {!!}
-  insert z (branch-e il l r) = {!!}
-  insert z (branch-u il l r) = {!!}
--}
+  insert z (single x) = branch-e +-base (step-e +-base (step-u +-base base)) (single z) (single x)
+  insert z (branch-e pl il l r) = branch-u        pl  (step-u (+-suc pl) il)           l  (insert z r)
+  insert z (branch-u pl il l r) = branch-e (+-suc pl) (step-e (+-suc pl) il) (insert z l)           r
