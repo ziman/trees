@@ -118,14 +118,21 @@ module VecSplit (A : Set) where
   split x []       = single x
   split x (y ∷ ys) = insert x (split y ys)
 
-  split-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → sx ≡ sx'
-  split-uniq (single x) (single .x) = refl
-  split-uniq (branch-e pl il l r) (branch-e pl' il' l' r') = {!!}
-  split-uniq (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
-  split-uniq (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
-  split-uniq (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
+  module Uniqueness where
+
+    private
+      foo : ℕ
+      foo = 0
+
+    split-irr : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → sx ≡ sx'
+    split-irr (single x) (single .x) = refl
+    split-irr (branch-e pl il l r) (branch-e pl' il' l' r') = {!!}
+    split-irr (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
+    split-irr (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
+    split-irr (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
   
   open Logarithm
+  open Uniqueness
 
   shape : {n : ℕ} {xs : Vec A n} (sx : Split xs) → LogTree
   shape (single x) = single
@@ -144,6 +151,12 @@ module VecSplit (A : Set) where
   depth : {n : ℕ} {xs : Vec A n} (sx : Split xs) → ℕ
   depth = ldepth ∘ shape
 
+  shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
+  shape-uniq sx sx' = cong shape (split-irr sx sx')
+
+  shape-canon : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
+  shape-canon {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-lemma x xs)
+
   data Exp : ℕ → Set where
     single : A → Exp zero
     branch : ∀ {n} → (l r : Exp n) → Exp (suc n)
@@ -155,4 +168,4 @@ module VecSplit (A : Set) where
   ... | nothing | nothing = nothing
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
-  ... | just el | just er = just {!!}
+  exp? (branch-e pl (step-e pf (step-u pf' il)) l r) | just el | just er = {!!}
