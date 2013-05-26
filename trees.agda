@@ -126,19 +126,67 @@ module VecSplit (A : Set) where
         → P p q r s ≡ P p' q' r' s'
       cong₄ P refl refl refl refl = refl
 
-    il-irr-ex : {n : ℕ} {xs xs' ys ys' : Vec A n} {zs : Vec A (n + n)}
-      → Interleave even xs ys zs → Interleave even xs' ys' zs
-      → xs ≡ xs'
-    il-irr-ex il il' = {!!}
+      aug : Evenness → ℕ → ℕ
+      aug   even = id
+      aug uneven = suc
+
+      p+sq=sp+q : ∀ p q → p + suc q ≡ suc p + q
+      p+sq=sp+q  zero   q = refl
+      p+sq=sp+q (suc p) q = cong suc (p+sq=sp+q p q)
+
+      extract-xs : ∀ {n} → (e : Evenness) → Vec A (n + aug e n) → Vec A n
+      extract-xs {zero}          even      []  = []
+      extract-xs {zero}        uneven (x ∷ []) = []
+      extract-xs {suc  n}        even (x ∷ zs) = x ∷ extract-xs uneven zs
+      extract-xs {suc  zero}   uneven (y ∷ x ∷ y' ∷ []) = x ∷ []
+      extract-xs {suc (suc n)} uneven (y ∷ x ∷ zs)
+        = x ∷ extract-xs uneven (subst (Vec A) (p+sq=sp+q n (suc (suc n))) zs)
+
+      extract-ys : ∀ {n} → (e : Evenness) → Vec A (n + aug e n) → Vec A (aug e n)
+      extract-ys {zero} even [] = []
+      extract-ys {zero} uneven (x ∷ []) = x ∷ []
+      extract-ys {suc zero} even (x ∷ y ∷ []) = y ∷ []
+      extract-ys {suc (suc n)} even (x ∷ y ∷ zs)
+        = y ∷ extract-ys even (subst (Vec A) (p+sq=sp+q n (suc n)) zs)
+      extract-ys {suc n} uneven (y ∷ zs) rewrite p+sq=sp+q n (suc n) with zs
+      ... | x' ∷ zs' = y ∷ extract-ys {n} uneven zs'
+
+      extract-prop : ∀ {n} e (zs : Vec A (n + aug e n))
+        → Interleave e {n} {aug e n} (extract-xs e zs) (extract-ys e zs) zs
+      extract-prop {zero }   even [] = base
+      extract-prop {zero } uneven (x ∷ []) = step-u +-base base
+      extract-prop {suc n}   even (x ∷ zs) with extract-prop {n} uneven zs
+      ... | pf = {!step-e!}
+      extract-prop {suc n} uneven (x ∷ zs) = {!!}
+
+      n-half : ∀ {n} → ⌊ suc (n + n) /2⌋ ≡ n
+      n-half {zero} = refl
+      n-half {suc zero} = refl
+      n-half {suc (suc n)} = cong suc (begin
+        ⌊ suc (n + suc (suc n)) /2⌋ 
+          ≡⟨ cong (λ x → ⌊ suc x /2⌋) (p+sq=sp+q n (suc n)) ⟩
+        ⌊ suc (suc n + suc n) /2⌋
+          ≡⟨ n-half ⟩
+        suc n
+          ∎)
+        where
+          open ≡-Reasoning
+  
+      il-uniq-xs : {n : ℕ} (e : Evenness) {xs xs' : Vec A n} {ys ys' : Vec A (aug e n)} {zs : Vec A (n + aug e n)}
+        → Interleave e xs ys zs → xs ≡ extract-xs e zs × ys ≡ extract-ys e zs
+      il-uniq-xs il = {!!}
 
     split-irr : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → sx ≡ sx'
+    split-irr = {!!}
+    {-
     split-irr (single x) (single .x) = refl
     split-irr (branch-e pl il l r) (branch-e pl' il' l' r')
       = {!!}
     split-irr (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
     split-irr (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
     split-irr (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
-  
+    -}
+ 
   open Logarithm
   open Uniqueness
 
@@ -146,6 +194,9 @@ module VecSplit (A : Set) where
   shape (single x) = single
   shape (branch-e pl il l r) = double   even (shape l) (shape r)
   shape (branch-u pl il l r) = double uneven (shape l) (shape r)
+
+  depth : {n : ℕ} {xs : Vec A n} (sx : Split xs) → ℕ
+  depth = ldepth ∘ shape
 
   shape-comm : ∀ {n y} x {xs : Vec A n} (sx : Split (y ∷ xs)) → shape (insert x sx) ≡ inc (shape sx)
   shape-comm x (single y) = refl
@@ -156,19 +207,11 @@ module VecSplit (A : Set) where
   shape-lemma x [] = refl
   shape-lemma x (y ∷ xs) rewrite sym (shape-lemma y xs) = shape-comm x (split y xs)
 
-  depth : {n : ℕ} {xs : Vec A n} (sx : Split xs) → ℕ
-  depth = ldepth ∘ shape
-
   shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
   shape-uniq sx sx' = cong shape (split-irr sx sx')
 
   insert-∷ : ∀ z x {n} (xs : Vec A n) → split z (x ∷ xs) ≡ insert z (split x xs)
   insert-∷ z x xs = refl
-
-  split-uniq : {n : ℕ} (x : A) (xs : Vec A n) (sx : Split (x ∷ xs)) → shape sx ≡ shape (split x xs)
-  split-uniq x [] (single .x) = refl
-  split-uniq x (x₁ ∷ xs) (branch-e x₂ x₃ sx sx₁) = {!!}
-  split-uniq x (x₁ ∷ .(y' ∷ zs)) (branch-u {n} {nn} {.x₁} {.x} {y'} {xs} {ys} {zs} x₂ x₃ sx sx₁) = {!!}
 
   shape-canon : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
   shape-canon {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-lemma x xs)
