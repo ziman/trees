@@ -161,7 +161,7 @@ module VecSplit (A : Set) where
     single : A → Exp zero
     branch : ∀ {n} → (l r : Exp n) → Exp (suc n)
 
-  exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp ⌊log₂-suc n ⌋)
+  exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp (depth sx))
   exp? (single x) = just (single x)
   exp? (branch-u pl il l r) = nothing
   exp? (branch-e pl il l r) with exp? l | exp? r
@@ -169,5 +169,8 @@ module VecSplit (A : Set) where
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
   exp? (branch-e {n} {nn} {._} {y} {xs} {ys} {zs} pl (step-e {.n} {.nn} {x} pf (step-u pf' il)) l r) | just el | just er
+    rewrite shape-canon l | shape-canon r = just (branch el er)
+{-
     = subst (Maybe ∘ Exp ∘ ldepth ∘ inc) (shape-lemma y zs)
         (subst (Maybe ∘ Exp ∘ ldepth) (shape-comm x (split y zs)) {!!})
+-}
