@@ -121,12 +121,20 @@ module VecSplit (A : Set) where
   module Uniqueness where
 
     private
-      foo : ℕ
-      foo = 0
+      cong₄ : ∀ {A B C D E : Set} (P : A → B → C → D → E) {p p' q q' r r' s s'}
+        → p ≡ p' → q ≡ q' → r ≡ r' → s ≡ s'
+        → P p q r s ≡ P p' q' r' s'
+      cong₄ P refl refl refl refl = refl
+
+    il-irr-ex : {n : ℕ} {xs xs' ys ys' : Vec A n} {zs : Vec A (n + n)}
+      → Interleave even xs ys zs → Interleave even xs' ys' zs
+      → xs ≡ xs'
+    il-irr-ex il il' = {!!}
 
     split-irr : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → sx ≡ sx'
     split-irr (single x) (single .x) = refl
-    split-irr (branch-e pl il l r) (branch-e pl' il' l' r') = {!!}
+    split-irr (branch-e pl il l r) (branch-e pl' il' l' r')
+      = {!!}
     split-irr (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
     split-irr (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
     split-irr (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
@@ -154,6 +162,14 @@ module VecSplit (A : Set) where
   shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
   shape-uniq sx sx' = cong shape (split-irr sx sx')
 
+  insert-∷ : ∀ z x {n} (xs : Vec A n) → split z (x ∷ xs) ≡ insert z (split x xs)
+  insert-∷ z x xs = refl
+
+  split-uniq : {n : ℕ} (x : A) (xs : Vec A n) (sx : Split (x ∷ xs)) → shape sx ≡ shape (split x xs)
+  split-uniq x [] (single .x) = refl
+  split-uniq x (x₁ ∷ xs) (branch-e x₂ x₃ sx sx₁) = {!!}
+  split-uniq x (x₁ ∷ .(y' ∷ zs)) (branch-u {n} {nn} {.x₁} {.x} {y'} {xs} {ys} {zs} x₂ x₃ sx sx₁) = {!!}
+
   shape-canon : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
   shape-canon {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-lemma x xs)
 
@@ -161,16 +177,17 @@ module VecSplit (A : Set) where
     single : A → Exp zero
     branch : ∀ {n} → (l r : Exp n) → Exp (suc n)
 
-  exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp (depth sx))
-  exp? (single x) = just (single x)
-  exp? (branch-u pl il l r) = nothing
-  exp? (branch-e pl il l r) with exp? l | exp? r
+  exp'? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp (depth sx))
+  exp'? (single x) = just (single x)
+  exp'? (branch-u pl il l r) = nothing
+  exp'? (branch-e pl il l r) with exp'? l | exp'? r
   ... | nothing | nothing = nothing
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
-  exp? (branch-e {n} {nn} {._} {y} {xs} {ys} {zs} pl (step-e {.n} {.nn} {x} pf (step-u pf' il)) l r) | just el | just er
+  exp'? (branch-e {n} {nn} {._} {y} {xs} {ys} {zs} pl (step-e {.n} {.nn} {x} pf (step-u pf' il)) l r) | just el | just er
     rewrite shape-canon l | shape-canon r = just (branch el er)
-{-
-    = subst (Maybe ∘ Exp ∘ ldepth ∘ inc) (shape-lemma y zs)
-        (subst (Maybe ∘ Exp ∘ ldepth) (shape-comm x (split y zs)) {!!})
--}
+
+  exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp ⌊log₂-suc n ⌋)
+  exp? sx with exp'? sx
+  ... | nothing = nothing
+  ... | just e  = just (subst Exp (shape-canon sx) e)
