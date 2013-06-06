@@ -4,7 +4,9 @@ module Shape (A : Set) where
   open import Function
   open import Relation.Binary.PropositionalEquality
 
-  open import Split A
+  import Splits
+  open Splits A
+
   open import Evenness
   open import Logarithm
 

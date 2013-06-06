@@ -1,4 +1,4 @@
-module Split (A : Set) where
+module Splits (A : Set) where
   open import Data.Nat
   open import Data.Vec hiding (split)
 
