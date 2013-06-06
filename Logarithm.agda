@@ -1,0 +1,31 @@
+module Logarithm where
+  open import Data.Nat
+  open import Evenness
+
+  data LogTree : Set where
+    single : LogTree
+    double : Evenness → LogTree → LogTree → LogTree
+
+  rdepth : LogTree → ℕ
+  rdepth single = 0
+  rdepth (double _ l r) = suc (rdepth r)
+  
+  ldepth : LogTree → ℕ
+  ldepth single = 0
+  ldepth (double _ l r) = suc (ldepth l)
+
+  inc : LogTree → LogTree
+  inc single = double even single single
+  inc (double   even lx ly) = double uneven      lx  (inc ly)
+  inc (double uneven lx ly) = double   even (inc lx)      ly
+
+  logtree : ℕ → LogTree
+  logtree  zero   = single
+  logtree (suc n) = inc (logtree n)
+
+  ⌊log₂-suc_⌋ : (n : ℕ) → ℕ
+  ⌊log₂-suc n ⌋ = ldepth (logtree n)
+
+  ⌈log₂-suc_⌉ : (n : ℕ) → ℕ
+  ⌈log₂-suc n ⌉ = rdepth (logtree n)
+
