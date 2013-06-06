@@ -118,77 +118,7 @@ module VecSplit (A : Set) where
   split x []       = single x
   split x (y ∷ ys) = insert x (split y ys)
 
-  module Uniqueness where
-
-    private
-      cong₄ : ∀ {A B C D E : Set} (P : A → B → C → D → E) {p p' q q' r r' s s'}
-        → p ≡ p' → q ≡ q' → r ≡ r' → s ≡ s'
-        → P p q r s ≡ P p' q' r' s'
-      cong₄ P refl refl refl refl = refl
-
-      aug : Evenness → ℕ → ℕ
-      aug   even = id
-      aug uneven = suc
-
-      p+sq=sp+q : ∀ p q → p + suc q ≡ suc p + q
-      p+sq=sp+q  zero   q = refl
-      p+sq=sp+q (suc p) q = cong suc (p+sq=sp+q p q)
-
-      extract-xs : ∀ {n} → (e : Evenness) → Vec A (n + aug e n) → Vec A n
-      extract-xs {zero}          even      []  = []
-      extract-xs {zero}        uneven (x ∷ []) = []
-      extract-xs {suc  n}        even (x ∷ zs) = x ∷ extract-xs uneven zs
-      extract-xs {suc  zero}   uneven (y ∷ x ∷ y' ∷ []) = x ∷ []
-      extract-xs {suc (suc n)} uneven (y ∷ x ∷ zs)
-        = x ∷ extract-xs uneven (subst (Vec A) (p+sq=sp+q n (suc (suc n))) zs)
-
-      extract-ys : ∀ {n} → (e : Evenness) → Vec A (n + aug e n) → Vec A (aug e n)
-      extract-ys {zero} even [] = []
-      extract-ys {zero} uneven (x ∷ []) = x ∷ []
-      extract-ys {suc zero} even (x ∷ y ∷ []) = y ∷ []
-      extract-ys {suc (suc n)} even (x ∷ y ∷ zs)
-        = y ∷ extract-ys even (subst (Vec A) (p+sq=sp+q n (suc n)) zs)
-      extract-ys {suc n} uneven (y ∷ zs) rewrite p+sq=sp+q n (suc n) with zs
-      ... | x' ∷ zs' = y ∷ extract-ys {n} uneven zs'
-
-      extract-prop : ∀ {n} e (zs : Vec A (n + aug e n))
-        → Interleave e {n} {aug e n} (extract-xs e zs) (extract-ys e zs) zs
-      extract-prop {zero }   even [] = base
-      extract-prop {zero } uneven (x ∷ []) = step-u +-base base
-      extract-prop {suc n}   even (x ∷ zs) with extract-prop {n} uneven zs
-      ... | pf = {!step-e!}
-      extract-prop {suc n} uneven (x ∷ zs) = {!!}
-
-      n-half : ∀ {n} → ⌊ suc (n + n) /2⌋ ≡ n
-      n-half {zero} = refl
-      n-half {suc zero} = refl
-      n-half {suc (suc n)} = cong suc (begin
-        ⌊ suc (n + suc (suc n)) /2⌋ 
-          ≡⟨ cong (λ x → ⌊ suc x /2⌋) (p+sq=sp+q n (suc n)) ⟩
-        ⌊ suc (suc n + suc n) /2⌋
-          ≡⟨ n-half ⟩
-        suc n
-          ∎)
-        where
-          open ≡-Reasoning
-  
-      il-uniq-xs : {n : ℕ} (e : Evenness) {xs xs' : Vec A n} {ys ys' : Vec A (aug e n)} {zs : Vec A (n + aug e n)}
-        → Interleave e xs ys zs → xs ≡ extract-xs e zs × ys ≡ extract-ys e zs
-      il-uniq-xs il = {!!}
-
-    split-irr : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → sx ≡ sx'
-    split-irr = {!!}
-    {-
-    split-irr (single x) (single .x) = refl
-    split-irr (branch-e pl il l r) (branch-e pl' il' l' r')
-      = {!!}
-    split-irr (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
-    split-irr (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
-    split-irr (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
-    -}
- 
   open Logarithm
-  open Uniqueness
 
   shape : {n : ℕ} {xs : Vec A n} (sx : Split xs) → LogTree
   shape (single x) = single
@@ -198,23 +128,24 @@ module VecSplit (A : Set) where
   depth : {n : ℕ} {xs : Vec A n} (sx : Split xs) → ℕ
   depth = ldepth ∘ shape
 
-  shape-comm : ∀ {n y} x {xs : Vec A n} (sx : Split (y ∷ xs)) → shape (insert x sx) ≡ inc (shape sx)
-  shape-comm x (single y) = refl
-  shape-comm x (branch-e pl il l r) rewrite shape-comm x r = refl
-  shape-comm x (branch-u pl il l r) rewrite shape-comm x l = refl
+  module ShapeLemmas where
+    private
+      shape-comm : ∀ {n y} x {xs : Vec A n} (sx : Split (y ∷ xs)) → shape (insert x sx) ≡ inc (shape sx)
+      shape-comm x (single y) = refl
+      shape-comm x (branch-e pl il l r) rewrite shape-comm x r = refl
+      shape-comm x (branch-u pl il l r) rewrite shape-comm x l = refl
 
-  shape-lemma : ∀ {n} (x : A) (xs : Vec A n) → shape (split x xs) ≡ logtree n
-  shape-lemma x [] = refl
-  shape-lemma x (y ∷ xs) rewrite sym (shape-lemma y xs) = shape-comm x (split y xs)
+      shape-split : ∀ {n} (x : A) (xs : Vec A n) → shape (split x xs) ≡ logtree n
+      shape-split x [] = refl
+      shape-split x (y ∷ xs) rewrite sym (shape-split y xs) = shape-comm x (split y xs)
 
-  shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
-  shape-uniq sx sx' = cong shape (split-irr sx sx')
+      shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
+      shape-uniq sx sx' = {!!}
 
-  insert-∷ : ∀ z x {n} (xs : Vec A n) → split z (x ∷ xs) ≡ insert z (split x xs)
-  insert-∷ z x xs = refl
+    depth-lemma : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
+    depth-lemma {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-split x xs)
 
-  shape-canon : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
-  shape-canon {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-lemma x xs)
+  open ShapeLemmas
 
   data Exp : ℕ → Set where
     single : A → Exp zero
@@ -228,9 +159,9 @@ module VecSplit (A : Set) where
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
   exp'? (branch-e {n} {nn} {._} {y} {xs} {ys} {zs} pl (step-e {.n} {.nn} {x} pf (step-u pf' il)) l r) | just el | just er
-    rewrite shape-canon l | shape-canon r = just (branch el er)
+    rewrite depth-lemma l | depth-lemma r = just (branch el er)
 
   exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp ⌊log₂-suc n ⌋)
   exp? sx with exp'? sx
   ... | nothing = nothing
-  ... | just e  = just (subst Exp (shape-canon sx) e)
+  ... | just e  = just (subst Exp (depth-lemma sx) e)
