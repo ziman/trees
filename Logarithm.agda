@@ -1,5 +1,8 @@
 module Logarithm where
+  open import Function
   open import Data.Nat
+  open import Relation.Binary.PropositionalEquality
+
   open import Evenness
 
   data LogTree : Set where
@@ -23,9 +26,16 @@ module Logarithm where
   logtree  zero   = single
   logtree (suc n) = inc (logtree n)
 
-  ⌊log₂-suc_⌋ : (n : ℕ) → ℕ
-  ⌊log₂-suc n ⌋ = ldepth (logtree n)
+  ⌊log₂-suc_⌋ : ℕ → ℕ
+  ⌊log₂-suc_⌋ = ldepth ∘ logtree
 
-  ⌈log₂-suc_⌉ : (n : ℕ) → ℕ
-  ⌈log₂-suc n ⌉ = rdepth (logtree n)
+  ⌈log₂-suc_⌉ : ℕ → ℕ
+  ⌈log₂-suc_⌉ = rdepth ∘ logtree
+
+  data Complete : LogTree → Set where
+    single : Complete single
+    double : ∀ {l r} → Complete l → Complete r → Complete (double even l r)
+
+  powerOfTwo : ℕ → Set
+  powerOfTwo = Complete ∘ logtree
 

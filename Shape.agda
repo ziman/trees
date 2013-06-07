@@ -131,3 +131,4 @@ module Shape (A : Set) where
     depth-lemma {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-split x xs)
 
   open ShapeLemmas public
+
