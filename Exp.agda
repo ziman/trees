@@ -19,8 +19,9 @@ module Exp (A : Set) where
   ... | nothing | nothing = nothing
   ... | just el | nothing = nothing
   ... | nothing | just er = nothing
-  exp'? (branch-e {n} {nn} {._} {y} {xs} {ys} {zs} pl (step-e {.n} {.nn} {x} pf (step-u pf' il)) l r) | just el | just er
-    rewrite depth-lemma l | depth-lemma r = just (branch el er)
+  exp'? (branch-e pl il l r) | just el | just er
+    rewrite depth-lemma l | depth-lemma r
+    = just (branch el er)
 
   exp? : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → Maybe (Exp ⌊log₂-suc n ⌋)
   exp? sx with exp'? sx
