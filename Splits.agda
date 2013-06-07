@@ -1,6 +1,7 @@
 module Splits (A : Set) where
   open import Data.Nat
   open import Data.Vec hiding (split)
+  open import Relation.Binary.PropositionalEquality
 
   open import Evenness
 
@@ -8,17 +9,15 @@ module Splits (A : Set) where
     +-base : ∀ {n} → Plus 0 n n
     +-step : ∀ {m n o} → Plus m n o → Plus (suc m) n (suc o)
   
-  {-
+  -- note: not really necessary, just for illustration
   +-property : ∀ {p q} → Plus p q (p + q)
   +-property {zero } = +-base
   +-property {suc n} = +-step +-property
-  -}
 
   +-suc : ∀ {p q r} → Plus p q r → Plus (suc p) (suc q) (suc (suc r))
   +-suc  +-base     = +-step +-base
   +-suc (+-step pl) = +-step (+-suc pl)
 
-  {-
   +-unstepr : ∀ {p q r} → Plus p (suc q) (suc r) → Plus p q r
   +-unstepr +-base = +-base
   +-unstepr {r = suc r} (+-step pl) = +-step (+-unstepr pl)
@@ -31,7 +30,6 @@ module Splits (A : Set) where
 
   half-eq : ∀ {n n' nn} → Plus n n nn → Plus n' n' nn → n ≡ n'
   half-eq pl pl' rewrite half-lemma pl | half-lemma pl' = refl
-  -}
 
   data Interleave : Evenness → {m n o : ℕ}
     → Vec A m → Vec A n → Vec A o

@@ -2,8 +2,11 @@ module Exp (A : Set) where
   open import Data.Nat
   open import Data.Vec hiding (split)
   open import Data.Maybe
+  open import Relation.Binary.PropositionalEquality
 
+  open import Logarithm
   open import Shape A
+  open import Splits A
 
   data Exp : ℕ → Set where
     single : A → Exp zero
