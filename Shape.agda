@@ -29,8 +29,15 @@ module Shape (A : Set) where
       shape-split x [] = refl
       shape-split x (y ∷ xs) rewrite sym (shape-split y xs) = shape-comm x (split y xs)
 
-      shape-uniq : {n : ℕ} {xs : Vec A n} (sx sx' : Split xs) → shape sx ≡ shape sx'
-      shape-uniq sx sx' = {!!}
+      shape-size-ee : ∀ {pl il l r pl' il' l' r'}
+
+      shape-uniq : {n : ℕ} {xs ys : Vec A n} (sx : Split xs) (sy : Split ys) → shape sx ≡ shape sy
+      shape-uniq (single x) (single y) = refl
+      shape-uniq (branch-e pl il l r) (branch-e pl' il' l' r')
+        = cong₂ (double even) {!!} {!!}
+      shape-uniq (branch-e pl il l r) (branch-u pl' il' l' r') = {!!}
+      shape-uniq (branch-u pl il l r) (branch-e pl' il' l' r') = {!!}
+      shape-uniq (branch-u pl il l r) (branch-u pl' il' l' r') = {!!}
 
     depth-lemma : {n : ℕ} {x : A} {xs : Vec A n} (sx : Split (x ∷ xs)) → depth sx ≡ ⌊log₂-suc n ⌋
     depth-lemma {n} {x} {xs} sx rewrite shape-uniq sx (split x xs) = cong ldepth (shape-split x xs)
