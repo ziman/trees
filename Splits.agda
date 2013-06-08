@@ -28,8 +28,8 @@ module PlusProperties where
 
   half-lemma : ∀ {n nn} → Plus n n nn → n ≡ ⌊ nn /2⌋
   half-lemma +-base     = refl
-  half-lemma {suc n} {suc zero} (+-step ())
-  half-lemma {suc n} {suc (suc nn)} (+-step pl) = cong suc (half-lemma (+-unstepr pl))
+  half-lemma {nn = suc zero} (+-step ())
+  half-lemma {nn = suc (suc nn)} (+-step pl) = cong suc (half-lemma (+-unstepr pl))
 
   half-eq : ∀ {n n' nn} → Plus n n nn → Plus n' n' nn → n ≡ n'
   half-eq pl pl' rewrite half-lemma pl | half-lemma pl' = refl
@@ -42,13 +42,13 @@ data Interleave : Evenness → {m n o : ℕ}
 
     step-e : ∀ {n nn x y} {xs ys : Vec A n} {zs : Vec A nn}
       → Plus n n nn
-      → Interleave uneven {    n} {suc n}      xs  (y ∷ ys) (    y ∷ zs)
-      → Interleave even   {suc n} {suc n} (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
+      → Interleave uneven      xs  (y ∷ ys) (    y ∷ zs)
+      → Interleave even   (x ∷ xs) (y ∷ ys) (x ∷ y ∷ zs)
 
     step-u : ∀ {n nn y} {xs ys : Vec A n} {zs : Vec A nn}
       → Plus n n nn
-      → Interleave even   {n} {    n} xs      ys       zs
-      → Interleave uneven {n} {suc n} xs (y ∷ ys) (y ∷ zs)
+      → Interleave even   xs      ys       zs
+      → Interleave uneven xs (y ∷ ys) (y ∷ zs)
 
 data Split : {n : ℕ} → Vec A n → Set where
     single : ∀ x → Split (x ∷ [])
