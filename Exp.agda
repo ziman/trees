@@ -1,5 +1,6 @@
 module Exp (A : Set) where
 
+open import Data.Empty
 open import Data.Nat
 open import Data.Vec hiding (split)
 open import Data.Maybe
@@ -31,5 +32,11 @@ exp? sx with exp'? sx
 ... | nothing = nothing
 ... | just e  = just (subst ExpTree (depth-lemma sx) e)
 
-mkTree : {n : ℕ} (xs : Vec A (suc n)) → Maybe (ExpTree ⌊log₂-suc n ⌋)
-mkTree (x ∷ xs) = exp? (split x xs)
+mkTree' : {n : ℕ} (xs : Vec A (suc n)) → Maybe (ExpTree ⌊log₂-suc n ⌋)
+mkTree' (x ∷ xs) = exp? (split x xs)
+
+open import Data.List as L
+
+mkTree : (x : A) (xs : List A) → Maybe (ExpTree ⌊log₂-suc length xs ⌋)
+mkTree x xs = mkTree' (fromList (x ∷ xs))
+
