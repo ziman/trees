@@ -71,9 +71,19 @@ data Split : {n : ℕ} → Vec A n → Set where
 open PlusProperties
 
 insert : {n : ℕ} → {xs : Vec A n} → (z : A) → Split xs → Split (z ∷ xs)
-insert z (single x) = branch-e +-base (step-e +-base (step-u +-base base)) (single z) (single x)
-insert z (branch-e pl il l r) = branch-u        pl  (step-u (+-suc pl) il)           l  (insert z r)
-insert z (branch-u pl il l r) = branch-e (+-suc pl) (step-e (+-suc pl) il) (insert z l)           r
+insert z (single x) = branch-e il pl (single z) (single x)
+  where
+    il = +-base
+    pl = step-e +-base (step-u +-base base)
+
+insert z (branch-e pl il l r) = branch-u pl  il' l (insert z r)
+  where
+    il' = step-u (+-suc pl) il
+
+insert z (branch-u pl il l r) = branch-e pl' il' (insert z l) r
+  where
+    pl' = +-suc pl
+    il' = step-e (+-suc pl) il
 
 split : {n : ℕ} → (x : A) → (xs : Vec A n) → Split (x ∷ xs)
 split x []       = single x

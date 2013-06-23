@@ -1,0 +1,18 @@
+digraph G {
+  node [shape=plaintext];
+  graph [ordering="out",fontname="Sans",dpi="50"];
+  "ABCDEFG" -> "BDF";
+  "ABCDEFG" -> "ACEG";
+  "BDF" -> "D";
+  "D" -> " ";
+  "D" -> "";
+  "BDF" -> "BF";
+  "BF" -> "B";
+  "BF" -> "F";
+  "ACEG" -> "AE";
+  "ACEG" -> "CG";
+  "AE" -> "A";
+  "AE" -> "E";
+  "CG" -> "C";
+  "CG" -> "G";
+}
