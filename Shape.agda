@@ -58,7 +58,7 @@ module Balance where
     comm-⊕-other-l uneven even = refl
     comm-⊕-other-l uneven uneven = refl
   
-    plus-⊕ : ∀ {m} {n} {o} → Plus m n o → evenness m ⊕ evenness n ≡ evenness o
+    plus-⊕ : ∀ {m} {n} {o} → m +' n ≡' o → evenness m ⊕ evenness n ≡ evenness o
     plus-⊕ +-base = even-id-l
     plus-⊕ {suc m} {n} {suc o} (+-step pl) = begin
       evenness (suc m) ⊕ evenness n
@@ -78,7 +78,7 @@ module Balance where
     ev-double even = refl
     ev-double uneven = refl
   
-    plus-even : ∀ {n nn} → Plus n n nn → evenness nn ≡ even
+    plus-even : ∀ {n nn} → n +' n ≡' nn → evenness nn ≡ even
     plus-even {n} {nn} pl = begin
       evenness nn
         ≡⟨ sym (plus-⊕ pl) ⟩
