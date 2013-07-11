@@ -23,7 +23,7 @@ exp'? (branch-e pl il l r) with exp'? l | exp'? r
 ... | nothing | nothing = nothing
 ... | just el | nothing = nothing
 ... | nothing | just er = nothing
-exp'? (branch-e pl il l r) | just el | just er
+... | just el | just er
   rewrite depth-lemma l | depth-lemma r
   = just (branch el er)
 
@@ -39,4 +39,3 @@ open import Data.List as L
 
 mkTree : (x : A) (xs : List A) → Maybe (ExpTree ⌊log₂-suc length xs ⌋)
 mkTree x xs = mkTree' (fromList (x ∷ xs))
-
